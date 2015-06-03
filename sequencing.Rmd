@@ -1,291 +1,314 @@
-
 # ![](/images/icons/help.gif)Using Bioconductor for Sequence Data
 
-
-Bioconductor can import diverse sequence-related file types, including
-fasta, fastq, BAM, gff, bed, and wig files, among others. Packages
-support common and advanced sequence manipulation operations such as
-trimming, transformation, and alignment.  Domain-specific analyses
-include quality assessment, ChIP-seq, differential expression,
-RNA-seq, and other approaches. Bioconductor includes an interface to
-the Sequence Read Archive (via the
-[SRAdb](/packages/release/bioc/html/SRAdb.html) package).
-
-* [Sample Workflow](#sample-workflow)  
-* [Installation and Use](#install-and-use)
-* [Exploring Package Content](#exploring-package-content)
-* [Sequencing Resources](#sequencing-resources)
-
-<h2 id="sample-workflow">Sample Workflow</h2>
-
-This is a simple work flow for single-end RNA-seq looking at
-differential representation of known genes. The data is in a directory
-`dataDir`, as implied by the commands below (<...> indicates
-information to be provide by the user).
-
-```{r warning=FALSE, echo=FALSE, results="hide"}
-suppressPackageStartupMessages(library(pasillaBamSubset))
+```{r style, echo=FALSE, message=FALSE, warning=FALSE, results="asis"}
+library("BiocStyle")
+library("knitr")
+options(width=100)
+opts_chunk$set(message = FALSE, error = FALSE, warning = FALSE)
 ```
 
-```{r}
-  dataDir <- system.file("extdata", package="pasillaBamSubset")
-  #fastqDir <- file.path(dataDir, "fastq")
-  fastqDir <- dataDir
-  #bamDir <- file.path(dataDir, "bam")
-  bamDir <- dataDir
-  #outputDir <- file.path(dataDir, "output")
-  outputDir <- tempdir()
+```{r, echo=FALSE}
+suppressPackageStartupMessages({
+   library(GenomicRanges)
+   library(GenomicAlignments) 
+   library(Biostrings)
+   library(Rsamtools)
+   library(ShortRead)
+   library(BiocParallel)
+   library(rtracklayer)
+   library(VariantAnnotation)
+   library(AnnotationHub)
+   library(BSgenome.Hsapiens.UCSC.hg19)
+   library(RNAseqData.HNRNPC.bam.chr14)
+})
+ah = AnnotationHub()
 ```
+_Bioconductor_ allows one to do analysis and comprehension of high-
+throughput genomic data. We have a vast number of packages that allow
+rigorous statistical analysis of large data while keeping technological 
+artifacts in mind. We can also comprehend and visualize these results
+in a biological context and reproduce these analysis easily. Different
+types of analysis can be carried out using _Bioconductor_, for example 
 
-Sequencing is done outside R; at the start of the work flow we have
-access to fastq files, in the `fastqDir` directory.  A first step
-after sequencing might use [ShortRead][1] to produce a quality
-assessment report. Down-sample fastq files if they are big.
+- Sequencing : RNASeq, ChIPSeq, variants, copy number.. 
+- Microarrays: expression, SNP, ...
+- Domain specific analysis : Flow cytometry, Proteomics ..
+ 
+For all these analysis, one has to import and work with diverse 
+sequence-related file types, including fasta, fastq, BAM, gff, 
+bed, and wig files, among others. _Bioconductor_ Packages 
+support import, common and advanced sequence 
+manipulation operations such as trimming, transformation, 
+and alignment including quality assessment. 
 
-```{r}
-library(ShortRead)
-fls <- list.files(fastqDir, "fa$", full=TRUE) # was fastq
-names(fls) <- sub(".fastq", "", basename(fls))
-## use FastqSampler if fastq files are large
-qas <- lapply(seq_along(fls),
-              function(i, fls) qa(readFastq(fls[i]), names(fls)[i]),
-              fls)
-qa <- do.call(rbind, qas)
-save(qa, file=file.path(outputDir, "qa.rda"))
-browseURL(report(qa)) # only if interactive() ?
-  ```
+<h2 id="contents"> Contents </h2>
 
-At this stage, one might use tools from [ShortRead][1] or
-[Biostrings][2] to remediate low quality reads (e.g., trim low quality
-tails or remove artifacts of sample preparation).
+* [Sequencing Resources](#pkgs)
+* [Ranges Infrastructure](#range)
+* [DNA /amino acid sequence from FASTA files](#fasta)
+* [Reads from FASTQ files](#fastq)
+* [Aligned Reads from BAM files](#bam)
+* [Called Variants from VCF files](#vcf)
+* [Genome Annotations from BED, WIG, GTF etc files](#rtracklayer)
 
-Alignment is usually done outside R. Output is a BAM file, one per
-sample. `Biostrings::matchPDict` (in some circumstances) and the
-[Rsubread][6] package might also be used.
+<h2 id="pkgs">Sequencing Resources</h2>
 
-Differential representation typically proceeds from a collection of
-known gene locations, including information about gene
-structure. Known gene information can come from a variety of sources,
-conveniently from UCSC or biomaRt using the [GenomicFeatures][3]
-package. These can be saved to disk as sqlite data bases for future
-use or to be shared with lab mates. With R >= 2.14.0, there are
-semi-annual snapshots available, as used here.
+Here is a illustrative description elaborating the different
+file types at various stages in a typical analysis with the 
+package names (in pink boxes) that one will use for each stage. 
 
-```{r}
-library(TxDb.Scerevisiae.UCSC.sacCer2.sgdGene)
-#txdb <- Scerevisiae_UCSC_sacCer2_ensGene_TxDb
-txdb <- TxDb.Scerevisiae.UCSC.sacCer2.sgdGene
-
-gnModel <- exonsBy(txdb, "gene")
-```
-
-There are different ways to count, some of which are implemented in
-`GenomicRanges::summarizeOverlaps` (available with R >= 2.15). Here is a
-simple function that counts any kind of overlap between known genes as
-a 'hit', and that discards a read hitting more than one gene. This is
-not always satisfactory, but illustrates the flexibility available.
-
-```{r}
-bamFls <- list.files(bamDir, "bam$", full=TRUE)
-names(bamFls) <- sub("\\..*", "", basename(bamFls))
-counter <- function(fl, gnModel)
-{
-    aln <- readGAlignments(fl)
-    strand(aln) <- "*" # for strand-blind sample prep protocol
-    hits <- countOverlaps(aln, gnModel)
-    counts <- countOverlaps(gnModel, aln[hits==1])
-    names(counts) <- names(gnModel)
-    counts
-}
-counts <- sapply(bamFls, counter, gnModel)
-save(counts, file=file.path(outputDir, "counts.rda"))
-```
-
-[edgeR][7] and [DESeq][8] are mature packages that take a
-sophisticated statistical approach to the analysis of differential
-representation; `DEXSeq` is a recent package (available in R >= 2.14)
-to identify differential exon use. An [edgeR][7] work flow is
-
-```{r}
-library(edgeR)
-
-## identify treatment groups
-#grp <- factor(<...>)
-grp <- factor("case", "control")
-
-## create data structures
-dge <- DGEList(counts, group=grp)
-dge <- calcNormFactors(dge)
-
-## filter uniformative genes
-m <- 1e6 * t(t(dge$counts) / dge$samples$lib.size)
-ridx <- rowSums(m > 1) >= 2
-dge <- dge[ridx,]
-
-## comparison between groups
-design <- model.matrix( ~ grp )
-dge <- estimateCommonDisp(dge, design)
-fit <- glmFit(dge, design, dispersion=dge$common.dispersion)
-lrTest <- glmLRT(dge, fit, coef=2)
-tt <- topTags(lrTest, Inf)
-save(tt, file=file.path(dataDir, "tt.rda")) # save to outdir?
-```
-
-Two sanity checks along the way are that the treatment groups are
-relatively distinct in an MDS (multi-dimensional scaling) plot, and
-that the differentially representation tags really are.
-
-```{r}
-plotMDS.DGEList(dge)
-sapply(rownames(tt$table)[1:4],
-       function(x, grp) tapply(counts[x,], grp, mean), 
-       grp)
-```
-
-Some annotation information is available from the `org*` model
-organism packages; the [biomaRt][13] package is an alternative. Here
-we get the sgd ids from the top table, and use these to add gene name
-annotations
-
-```{r}
-library(org.Sc.sgd.db)
-ttids <- rownames(tt$table)
-sgd2gnname <- mget(ttids, org.Sc.sgdGENENAME, ifnotfound=NA)
-ttAnno <- cbind(tt$table, genename=unlist(sgd2gnname))
-```
-
-A next step might involve gene set analyses, as in the [goseq][9]
-package.
-
-<p class="back_to_top">[ <a href="#top">Back to top</a> ]</p>
-
-<h2 id="install-and-use">Installation and Use</h2>
-
-Follow [installation instructions](/install/) to start using these
-packages.  To install the `ShortRead` package and all of its
-dependencies, evaluate the commands
-
-```{r eval=FALSE}
-source("http://bioconductor.org/biocLite.R")
-biocLite("ShortRead")
-```
-
-Package installation is required only once per R installation. View a
-full list of
-[available packages](/packages/release/bioc/).
-
-To use the `ShortRead` package, evaluate the command
-
-```{r eval=FALSE}
-library("ShortRead")
-```
-
-This instruction is required once in each R session.
-
-<p class="back_to_top">[ <a href="#top">Back to top</a> ]</p>
-
-<h2 id="exploring-package-content">Exploring Package Content</h2>
-
-Packages have extensive help pages, and include vignettes highlighting
-common use cases. The help pages and vignettes are available from
-within R. After loading a package, use syntax like
-
-```r
-help(package="ShortRead")
-?readFastq
-```
-
-to obtain an overview of help on the `ShortRead` package, and the
-`readFastq` function, and
-
-```{r eval=FALSE}
-browseVignettes(package="ShortRead")
-```
-
-to view vignettes (providing a more comprehensive introduction to
-package functionality; the [edgeR][7] vignette is an excellent example
-of this) in the `ShortRead` package. Use
-
-```{r eval=FALSE}
-help.start()
-```
-
-to open a web page containing comprehensive help resources.
-
-<p class="back_to_top">[ <a href="#top">Back to top</a> ]</p>
-
-<h2 id="sequencing-resources">Sequencing Resources</h2>
+![](sequencepkg.png)
 
 The following packages illustrate the diversity of functionality
-available; all are in the release version of Bioconductor.
+available; all are in the release version of _Bioconductor_.
 
-* [IRanges][5], [GenomicRanges][4] and
-  [genomeIntervals](/packages/release/bioc/html/genomeIntervals.html)
+* `r Biocpkg("IRanges")`, `r Biocpkg("GenomicRanges")` and
+  `r Biocpkg("genomeIntervals")`
   for range-based (e.g., chromosomal regions) calculation, data
   manipulation, and general-purpose data
-  representation. [Biostrings][2] for alignment, pattern matching
+  representation. `r Biocpkg("Biostrings")` for alignment, pattern matching
   (e.g., primer removal), and data manipulation of large biological
   sequences or sets of sequences.
 
-* [ShortRead][1] and [Rsamtools][10] for file I/O, quality assessment,
-  and high-level, general purpose data summary.  [rtracklayer][11] for
-  import and export of tracks on the UCSC genome browser.
+* `r Biocpkg("ShortRead")` and `r Biocpkg("Rsamtools")` for file I/O, 
+  quality assessment,   and high-level, general purpose data summary.  
+  `r Biocpkg("rtracklayer")` for   import and export of tracks on 
+  the UCSC genome browser.
 
-* [BSgenome][12] for accessing and manipulating curated whole-genome
-  representations.  [GenomicFeatures][3] for annotation of sequence
-  features across common genomes, [biomaRt][13] for access to Biomart
+* `r Biocpkg("BSgenome")` for accessing and manipulating curated whole-genome
+  representations.  `r Biocpkg("GenomicFeatures")` for annotation of sequence
+  features across common genomes, `r Biocpkg("biomaRt")` for access to Biomart
   databases.
 
-* [SRAdb](/packages/release/bioc/html/SRAdb.html)
-  for querying and retrieving data from the Sequence Read Archive.
+* `r Biocpkg("SRAdb")`  for querying and retrieving data from the 
+  Sequence Read Archive.
 
 * ChIP-seq and related (e.g., motif discovery, identification of
   high-coverage segments) activities are facilitated by packages such
   as
-  [CSAR](/packages/release/bioc/html/CSAR.html),
-  [chipseq](/packages/release/bioc/html/chipseq.html),
-  [ChIPseqR](/packages/release/bioc/html/ChIPseqR.html),
-  [ChIPsim](/packages/release/bioc/html/ChIPsim.html),
-  [ChIPpeakAnno](/packages/release/bioc/html/ChIPpeakAnno.html),
-  [DiffBind](/packages/release/bioc/html/DiffBind.html),
-  [iSeq](/packages/release/bioc/html/iSeq.html),
-  [rGADEM](/packages/release/bioc/html/rGADEM.html),
-  [segmentSeq](/packages/release/bioc/html/segmentSeq.html),
-  [BayesPeak](/packages/release/bioc/html/BayesPeak.html),
-  [PICS](/packages/release/bioc/html/PICS.html).
+  `r Biocpkg("CSAR")`,   `r Biocpkg("chipseq")`,
+  `r Biocpkg("ChIPseqR")`,   `r Biocpkg("ChIPsim")`,
+  `r Biocpkg("ChIPpeakAnno")`,   `r Biocpkg("DiffBind")`,
+  `r Biocpkg("iSeq")`,  `r Biocpkg("rGADEM")`,
+  `r Biocpkg("segmentSeq")`, `r Biocpkg("BayesPeak")`,
+  `r Biocpkg("PICS")`.
 
 * Differential expression and RNA-seq style analysis can be
-  accomplished with [edgeR][7], [DESeq][8],
-  [baySeq](/packages/release/bioc/html/baySeq.html),
-  [DEGseq](/packages/release/bioc/html/DEGseq.html),
-  [Genominator](/packages/release/bioc/html/Genominator.html). The
-  [DEXSeq][14] package, available with R >= 2.14, allows exon-level
+  accomplished with `r Biocpkg("edgeR")`, `r Biocpkg("DESeq")`,
+  `r Biocpkg("baySeq")`, `r Biocpkg("DEGseq")`,
+  `r Biocpkg("Genominator")`. The
+  `r Biocpkg("DEXSeq")` package, available with R >= 2.14, allows exon-level
   differential representation.
 
-Additional packages are classified in the [biocViews][15] hierarchy,
-for instance under Software : AssayTechnologies :
+Additional packages are classified in the 
+[biocViews](/packages/release/BiocViews.html) hierarchy,
+for instance under Software -> AssayTechnologies ->
 HighThroughputSequencing.
 
-<p class="back_to_top">[ <a href="#top">Back to top</a> ]</p>
+<h2 id="range">Ranges Infrastructure</i></h2>
+
+These packages rely very heavily on the *IRanges* / *GenomicRanges*
+infrastructure. Thus we will begin with a quick introduction to
+these and then cover different file types. 
+
+The `r Biocpkg("GenomicRanges")` package allows us to associate a range 
+with a sequence name (e.g., chromosome) and a strand.
+GRanges is a vector of genomic locations and associated annotations. 
+Each element in the vector is comprised of a sequence name, 
+an interval, a strand, and optional metadata columns 
+(e.g. score, GC content, etc.). 
+
+```[r}
+library(GenomicRanges)
+GRanges(seqnames=Rle(c('chr1', 'chr2', 'chr3'), c(3, 3, 4)),
+      IRanges(1:10, width=5), strand='-',
+      score=101:110, GC = runif(10))
+```
+
+Use help() to list the help pages in the `r Biocpkg("GenomicRanges")` package, 
+and vignettes() to view and access available vignettes.
+
+```{r eval=FALSE}
+help(package="GenomicRanges")
+vignette(package="GenomicRanges")
+```
+
+<h2 id="fasta">DNA /amino acid sequence from FASTA files</h2>
+
+`r Biocpkg("Biostrings")` classes (XStringset eg: DNAString) are used to represent
+DNA or amino acid sequences. In the example below we will construct a
+DNAString and show some manipulations. 
+
+```{r message=FALSE}
+library(Biostrings)
+d <- DNAString("TTGAAAA-CTC-N")
+length(d)  #no of letters in the DNAString
+```
+
+We will download the file 'Homo_sapiens.GRCh38.cdna.all.fa' 
+from Ensembl using `r Biocpkg("AnnotationHub")`.
+
+```{r eval=FALSE}
+library(AnnotationHub)
+ah = AnnotationHub()
+```
+This file is downloaded as a FaFile which can be read in using
+readFasta from the `r Biocpkg("ShortRead")` package
+
+```{r}
+ah2 <- query(ah, c("fasta", "homo sapiens", "Ensembl"))
+fl <- ah2[["AH18522"]]
+fl
+```
+We will open the file and create an index from the fasta 
+file using `r Biocpkg("Rsamtools")`.
+```{r}
+library(Rsamtools)
+fa <- open(fl)
+idx <- scanFaIndex(fa)
+idx
+```
+scanFaIndex has read in the sequence names and and widths of 
+recorded in an indexed fasta file, returning the information 
+as a GRanges object. scanFa returns the sequences indicated by 
+param as a DNAStringSet instance.
+
+```{r}
+dna <- scanFa(fa, param=idx[1:2])
+dna
+```
+`r Biocpkg("BSgenome")` packages inside _Bioconductor_ contain whole genome
+sequences as distributed by ENSEMBL, NCBI and others.
+In this next example we will load the whole genome sequence 
+for Homo sapiens from UCSC's `hg19` build and calculate the GC 
+content across chromosome 14. 
+
+```{r}
+library(BSgenome.Hsapiens.UCSC.hg19)
+
+chr14_range = GRanges("chr14", IRanges(1, seqlengths(Hsapiens)["chr14"]))
+chr14_dna <- getSeq(Hsapiens, chr14_range)
+letterFrequency(chr14_dna, "GC", as.prob=TRUE)
+```
+
+
+<h2 id="fastq"> Reads from FASTQ files</h2>
+
+`r Biocpkg("ShortRead")` package from _Bioconductor_ can be used for summarizing 
+quality of fastq files from within R. Here we illustrate a quick
+example where one can read in multiple fasta files, collect some 
+statistics and generate a report about the same. 
+
+`r Biocpkg("BiocParallel")` is another package from _Bioconductor_ which 
+parallelizes this task and speeds up the process. 
+
+```{r eval=FALSE}
+## 1. attach ShortRead and BiocParallel
+library(ShortRead)
+library(BiocParallel)
+
+## 2. create a vector of file paths
+fls <- dir("~/fastq", pattern="*fastq", full=TRUE)
+
+## 3. collect statistics
+stats0 <- qa(fls)
+
+## 4. generate and browse the report
+if (interactive())
+    browseURL(report(stats0))
+```
+
+<h2 id="bam">Aligned Reads from BAM files</h2>
+
+The `r Biocpkg("GenomicAlignments")` package is used to input reads aligned 
+to a reference genome. 
+
+In this next example, we will read in a BAM file 
+and specifically read in reads 
+supporting the junction identified at position 
+19653707 + 66M = 19653773 of chromosome 14.
+
+The package `r Biocexptpkg("RNAseqData.HNRNPC.bam.chr14_BAMFILES")`
+contains 8 BAM files. We will use only the 
+first BAM file. We will load the software packages
+and the data package, construct a GRanges
+with our region of interest and use summarizeJunctions
+to find reads in our region of interest. 
+
+```{r}
+## 1. load software packages
+library(GenomicRanges)
+library(GenomicAlignments)
+
+## 2. load sample data
+library('RNAseqData.HNRNPC.bam.chr14')
+bf <- BamFile(RNAseqData.HNRNPC.bam.chr14_BAMFILES[[1]], asMates=TRUE)
+
+## 3. define our 'region of interest'
+roi <- GRanges("chr14", IRanges(19653773, width=1)) 
+
+## 4. alignments, junctions, overlapping our roi
+paln <- readGAlignmentsList(bf)
+j <- summarizeJunctions(paln, with.revmap=TRUE)
+j_overlap <- j[j %over% roi]
+
+## 5. supporting reads
+paln[j_overlap$revmap[[1]]]
+```
+For a detailed tutorial on working with BAM files
+do check out this detailed [vignette of GenomicAlignments](http://bioconductor.org/packages/devel/bioc/vignettes/GenomicAlignments/inst/doc/OverlapEncodings.pdf)
+
+
+<h2 id="vcf">Called Variants from VCF files</h2>
+
+VCF text files contain meta-information lines, a header 
+line with column names, data lines with information about 
+a position in the genome, and optional genotype information 
+on samples for each position. 
+
+
+Data are parsed into a VCF object with readVcf
+from `r Biocpkg("VariantAnnoation")`
+
+```{r}
+library(VariantAnnotation)
+fl <- system.file("extdata", "chr22.vcf.gz", package="VariantAnnotation")
+vcf <- readVcf(fl, "hg19")
+```
+
+An excellent workflow on working with Variants can be found 
+[here](http://bioconductor.org/help/workflows/variants/)
+
+
+<h2 id="rtracklayer">Genome Annotations from BED, WIG, GTF etc files</h2>
+
+`r Biocpkg("rtracklayer")` import and export 
+functions can read in many common 
+file types, e.g., BED, WIG, GTF, …, in addition to querying 
+and navigating the UCSC genome browser.
+
+`r Biocpkg("rtracklayer")` contains a 'test' BED file which we will read in here
+
+```{r}
+library(rtracklayer)
+test_path <- system.file("tests", package = "rtracklayer")
+test_bed <- file.path(test_path, "test.bed")
+  
+test <- import(test_bed, format = "bed")
+test
+```
+
+The file is read in and returned as a GRanges to the user.
+A more detailed tutorial can be found [here](http://bioconductor.org/packages/devel/bioc/vignettes/rtracklayer/inst/doc/rtracklayer.pdf) 
+
+`r Biocpkg("AnnotationHub")` also contains a variety of genomic annotation files
+(eg BED, GTF, BigWig) which use import() from rtracklayer 
+behind the scenes. For a detailed tutorial the user is referred to
+[Annotation workflow](http://bioconductor.org/help/workflows/annotation/annotation/)
+and [AnnotationHub HOW TO vignette](http://bioconductor.org/packages/devel/bioc/vignettes/AnnotationHub/inst/doc/AnnotationHub-HOWTO.html)
+
 
 ```{r}
 sessionInfo()
 ```
 
-<p class="back_to_top">[ <a href="#top">Back to top</a> ]</p>
-
-[1]: /packages/release/bioc/html/ShortRead.html
-[2]: /packages/release/bioc/html/Biostrings.html
-[3]: /packages/release/bioc/html/GenomicFeatures.html
-[4]: /packages/release/bioc/html/GenomicRanges.html
-[5]: /packages/release/bioc/html/IRanges.html
-[6]: /packages/release/bioc/html/Rsubread.html
-[7]: /packages/release/bioc/html/edgeR.html
-[8]: /packages/release/bioc/html/DESeq.html
-[9]: /packages/release/bioc/html/goseq.html
-[10]: /packages/release/bioc/html/Rsamtools.html
-[11]: /packages/release/bioc/html/rtracklayer.html
-[12]: /packages/release/bioc/html/BSgenome.html
-[13]: /packages/release/bioc/html/biomaRt.html
-[14]: /packages/devel/bioc/html/DEXSeq.html
-[15]: /packages/release/BiocViews.html
