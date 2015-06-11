@@ -130,11 +130,11 @@ introduction to these and then cover different file types.
 
 The `r Biocpkg("GenomicRanges")` package allows us to associate a
 range of chromosome coordinates with a sequence name (e.g.,
-chromosome) and a strand. Such genomic ranges are very sueful for
+chromosome) and a strand. Such genomic ranges are very useful for
 describing both data (e.g., the coordinates of aligned reads, called
 ChIP peaks, SNPs, or copy number variants) and annotations (e.g., gene
 models, Roadmap Epigenomics regulatory elements, known clinically
-relevant variants from dbSNP).  `GRanges` is an object representting a
+relevant variants from dbSNP).  `GRanges` is an object representing a
 vector of genomic locations and associated annotations.  Each element
 in the vector is comprised of a sequence name, a range, a strand,
 and optional metadata (e.g. score, GC content, etc.).
@@ -210,7 +210,8 @@ The information is returned as a _GRanges_ object. `getSeq()` returns
 the sequences indicated by param as a DNAStringSet instance.
 
 ```{r}
-getSeq(fa, param=idx[1:2])
+long <- idx[width(idx) > 82000]
+getSeq(fa, param=long)
 ```
 
 `r Biocpkg("BSgenome")` packages inside _Bioconductor_ contain whole
