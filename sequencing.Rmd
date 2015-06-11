@@ -16,7 +16,7 @@ knitr::opts_chunk$set(message = FALSE, error = FALSE, warning = FALSE)
 BiocStyle::markdown()
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, results="hide", warning=FALSE}
 suppressPackageStartupMessages({
    library(GenomicRanges)
    library(GenomicAlignments) 
