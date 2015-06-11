@@ -33,6 +33,21 @@ suppressPackageStartupMessages({
 ah = AnnotationHub()
 ```
 
+```{r}
+library(GenomicRanges)
+library(GenomicAlignments) 
+library(Biostrings)
+library(Rsamtools)
+library(ShortRead)
+library(BiocParallel)
+library(rtracklayer)
+library(VariantAnnotation)
+library(AnnotationHub)
+library(BSgenome.Hsapiens.UCSC.hg19)
+library(RNAseqData.HNRNPC.bam.chr14)
+ah = AnnotationHub()
+```
+
 _Bioconductor_ enables the analysis and comprehension of high-
 throughput genomic data. We have a vast number of packages that allow
 rigorous statistical analysis of large data while keeping
