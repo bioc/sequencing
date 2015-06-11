@@ -30,7 +30,6 @@ suppressPackageStartupMessages({
    library(BSgenome.Hsapiens.UCSC.hg19)
    library(RNAseqData.HNRNPC.bam.chr14)
 })
-ah = AnnotationHub()
 ```
 
 ```{r}
