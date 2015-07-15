@@ -8,6 +8,8 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 output: 
   BiocStyle::html_document
+  fig_width: 6
+  fig_height: 4
 ---
 
 ```{r style, echo=FALSE, message=FALSE, warning=FALSE, results="asis"}
@@ -30,22 +32,11 @@ suppressPackageStartupMessages({
    library(BSgenome.Hsapiens.UCSC.hg19)
    library(RNAseqData.HNRNPC.bam.chr14)
 })
+ah = AnnotationHub()
+
 ```
 
-```{r}
-library(GenomicRanges)
-library(GenomicAlignments) 
-library(Biostrings)
-library(Rsamtools)
-library(ShortRead)
-library(BiocParallel)
-library(rtracklayer)
-library(VariantAnnotation)
-library(AnnotationHub)
-library(BSgenome.Hsapiens.UCSC.hg19)
-library(RNAseqData.HNRNPC.bam.chr14)
-ah = AnnotationHub()
-```
+# Introduction to Bioconductor for Sequence Data
 
 _Bioconductor_ enables the analysis and comprehension of high-
 throughput genomic data. We have a vast number of packages that allow
