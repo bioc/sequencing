@@ -8,13 +8,12 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 output: 
   BiocStyle::html_document
-  fig_width: 6
-  fig_height: 4
 ---
 
 ```{r style, echo=FALSE, message=FALSE, warning=FALSE, results="asis"}
 options(width=100)
-knitr::opts_chunk$set(message = FALSE, error = FALSE, warning = FALSE)
+knitr::opts_chunk$set(message = FALSE, error = FALSE, warning = FALSE,
+fig_width=6, fig_height=4)
 BiocStyle::markdown()
 ```
 
