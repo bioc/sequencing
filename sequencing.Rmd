@@ -72,7 +72,8 @@ Here is a illustrative description elaborating the different
 file types at various stages in a typical analysis, with the 
 package names (in pink boxes) that one will use for each stage. 
 
-![](sequencepkg.png)
+<p><img src="sequencepkg.png" width="500" height="400"/></p>
+
 
 The following packages illustrate the diversity of functionality
 available; all are in the release version of _Bioconductor_.
