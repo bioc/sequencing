@@ -35,8 +35,6 @@ ah = AnnotationHub()
 
 ```
 
-# Introduction to Bioconductor for Sequence Data
-
 _Bioconductor_ enables the analysis and comprehension of high-
 throughput genomic data. We have a vast number of packages that allow
 rigorous statistical analysis of large data while keeping
@@ -56,17 +54,7 @@ and wig files, among others. _Bioconductor_ packages support import,
 common and advanced sequence manipulation operations such as trimming,
 transformation, and alignment including quality assessment.
 
-<h2 id="contents"> Contents </h2>
-
-* [Sequencing Resources](#pkgs)
-* [Ranges Infrastructure](#range)
-* [DNA or amino acid sequences from FASTA files](#fasta)
-* [Reads from FASTQ files](#fastq)
-* [Aligned Reads from BAM files](#bam)
-* [Called Variants from VCF files](#vcf)
-* [Genome Annotations from BED, WIG, GTF etc files](#rtracklayer)
-
-<h2 id="pkgs">Sequencing Resources</h2>
+# Sequencing Resources
 
 Here is a illustrative description elaborating the different
 file types at various stages in a typical analysis, with the 
@@ -127,7 +115,7 @@ and other terms, and representative packages, include:
   and metagenome sequencing, e.g., `r Biocpkg("metagenomeSeq")`,
   `r Biocpkg("phyloseq")`, `r Biocpkg("DirichletMultinomial")`.
 
-<h2 id="range">Ranges Infrastructure</i></h2>
+# Ranges Infrastructure
 
 Many _Bioconductor_ packages rely heavily on the *IRanges* /
 *GenomicRanges* infrastructure. Thus we will begin with a quick
@@ -172,7 +160,7 @@ both in data analysis (e.g., counting overlaps between aligned reads
 and gene models in RNAseq) and comprehension (e.g., annotating genes
 near ChIP binding sites).
 
-<h2 id="fasta">DNA /amino acid sequence from FASTA files</h2>
+# DNA /amino acid sequence from FASTA files
 
 `r Biocpkg("Biostrings")` classes (e.g., `DNAStringSet`) are used to
 represent DNA or amino acid sequences. In the example below we will
@@ -233,7 +221,7 @@ chr14_dna <- getSeq(Hsapiens, chr14_range)
 letterFrequency(chr14_dna, "GC", as.prob=TRUE)
 ```
 
-<h2 id="fastq"> Reads from FASTQ files</h2>
+# Reads from FASTQ files
 
 `r Biocpkg("ShortRead")` package from _Bioconductor_ can be used for
 working with fastq files. Here we illustrate a quick example where one
@@ -263,7 +251,7 @@ Two useful functions in `r Biocpkg("ShortRead")` are `trimTails()` for
 processing FASTQ files, and `FastqStreamer()` for iterating through
 FASTQ files in manageable chunks (e.g., 1,000,000 records at a time).
 
-<h2 id="bam">Aligned Reads from BAM files</h2>
+# Aligned Reads from BAM files
 
 The `r Biocpkg("GenomicAlignments")` package is used to input reads
 aligned to a reference genome.
@@ -305,7 +293,7 @@ Encodings](http://bioconductor.org/packages/release/bioc/vignettes/GenomicAlignm
 vignette of GenomicAlignments.
 
 
-<h2 id="vcf">Called Variants from VCF files</h2>
+# Called Variants from VCF files
 
 VCF (Variant Call Files) describe SNP and other variants. The files
 contain meta-information lines, a header line with column names, and
@@ -330,7 +318,7 @@ specific genomic locations (using _GRanges_ and the `param = ScanVcfParam()`
 argument to input functions).
 
 
-<h2 id="rtracklayer">Genome Annotations from BED, WIG, GTF etc files</h2>
+# Genome Annotations from BED, WIG, GTF etc files
 
 `r Biocpkg("rtracklayer")` import and export functions can read in
 many common file types, e.g., BED, WIG, GTF, …, in addition to
