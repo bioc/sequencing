@@ -342,7 +342,7 @@ detailed tutorial can be found
 `r Biocpkg("AnnotationHub")` also contains a variety of genomic annotation files
 (eg BED, GTF, BigWig) which use import() from rtracklayer 
 behind the scenes. For a detailed tutorial the user is referred to
-[Annotation workflow](http://bioconductor.org/help/workflows/annotation/annotation/)
+[Annotation workflow](http://bioconductor.org/help/workflows/annotation/Annotation_Resources/)
 and [AnnotationHub HOW TO vignette](http://bioconductor.org/packages/devel/bioc/vignettes/AnnotationHub/inst/doc/AnnotationHub-HOWTO.html)
 
 
