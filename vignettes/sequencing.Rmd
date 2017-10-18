@@ -181,8 +181,8 @@ library(AnnotationHub)
 ah <- AnnotationHub()
 ```
 
-This file is downloaded as a FaFile which can be read in using
-`readFasta()` from the `r Biocpkg("ShortRead")` package
+This file is downloaded as a FaFile object which can be read in using
+`readDNAStringSet()` from the `r Biocpkg("Biostrings")` package
 
 ```{r}
 ah2 <- query(ah, c("fasta", "homo sapiens", "Ensembl"))
