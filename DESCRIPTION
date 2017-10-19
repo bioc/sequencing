@@ -1,6 +1,6 @@
 Package: sequencing 
 Title: Introduction to Bioconductor for Sequence Data
-Version: 1.0.3
+Version: 1.0.4
 Date: 2017-10-18
 Authors@R: c(person(role="aut", "Sonali", "Arora", email = "sarora@fredhutch.org"),person(role=c("aut", "cre"), "Martin", "Morgan", email = "martin.morgan@roswellpark.org"))
 Description: Bioconductor enables the analysis and comprehension of high-
@@ -34,6 +34,6 @@ Encoding: UTF-8
 LazyData: true
 VignetteBuilder: knitr
 biocViews: Sequencing 
-Suggests: knitr, rmarkdown
+Suggests: knitr, rmarkdown, BiocStyle
 NeedsCompilation: no
 URL: https://www.bioconductor.org/help/workflows/sequencing/ 
