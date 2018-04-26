@@ -1,5 +1,11 @@
 ---
-author: "Sonali Arora, Martin Morgan"
+author:
+  - name: Sonali Arora
+    affiliation: Fred Hutchinson Cancer Research Center, 1100 Fairview Ave. N., P.O. Box 19024, Seattle, WA, USA 98109-1024
+    email: sarora@fredhutch.org
+  - name: Martin Morgan
+    affiliation: Roswell Park Cancer Institute, Elm and Carlton St, Buffalo, NY 14263
+    email: martin.morgan@roswellpark.org
 title: "Introduction to Bioconductor for Sequence Data"
 date: "3 June 2015"
 vignette: >
@@ -34,6 +40,13 @@ suppressPackageStartupMessages({
 ah = AnnotationHub()
 
 ```
+**R version**: `r R.version.string`
+
+**Bioconductor version**: `r BiocInstaller::biocVersion()`
+
+**Package**: `r packageVersion("sequencing")`
+
+# Abstract
 
 _Bioconductor_ enables the analysis and comprehension of high-
 throughput genomic data. We have a vast number of packages that allow
