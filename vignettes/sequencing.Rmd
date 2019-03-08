@@ -194,37 +194,20 @@ library(AnnotationHub)
 ah <- AnnotationHub()
 ```
 
-This file is downloaded as a FaFile object
+This file is downloaded as a TwoBitFile
 
 ```{r}
-ah2 <- query(ah, c("fasta", "homo sapiens", "Ensembl"))
-fa <- ah2[["AH18522"]]
-fa
+ah2 <- query(ah, c("fasta", "homo sapiens", "Ensembl", "cdna"))
+dna <- ah2[["AH68262"]]
+dna
 ```
 
 The sequences in the file can be read in using
-`readDNAStringSet()` from the `r Biocpkg("Biostrings")` package.
+`getSeq()` from the `r Biocpkg("Biostrings")` package.
 The sequences are returned as a _DNAStringSet_ object.
 
 ```{r}
-readDNAStringSet(path(fa))
-```
-
-Alternatively, we can use tools from the `r Biocpkg("Rsamtools")` package
-to selectively load a subset of the sequences only.
-
-```{r}
-library(Rsamtools)
-idx <- scanFaIndex(fa)
-idx
-```
-
-The index is returned as a _GRanges_ object. Then we use `getSeq()` to
-load only the sequences indicated by `param`.
-
-```{r}
-long <- idx[width(idx) > 82000]
-getSeq(fa, param=long)
+getSeq(dna)
 ```
 
 `r Biocpkg("BSgenome")` packages inside _Bioconductor_ contain whole

@@ -1,8 +1,8 @@
 Package: sequencing 
 Title: Introduction to Bioconductor for Sequence Data
-Version: 1.7.1
+Version: 1.7.2
 Date: 2017-10-18
-Authors@R: c(person(role="aut", "Sonali", "Arora", email = "sarora@fredhutch.org"),person(role=c("aut", "cre"), "Martin", "Morgan", email = "martin.morgan@roswellpark.org"))
+Authors@R: c(person(role="aut", "Sonali", "Arora", email = "sarora@fredhutch.org"), person(role="aut", "Martin", "Morgan", email = "martin.morgan@roswellpark.org"), person(role="cre", "Bioconductor Package Maintainer", email = "maintainer@bioconductor.org"))
 Description: Bioconductor enables the analysis and comprehension of high-
     throughput genomic data. We have a vast number of packages that allow
     rigorous statistical analysis of large data while keeping
