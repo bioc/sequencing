@@ -1,6 +1,6 @@
 Package: sequencing 
 Title: Introduction to Bioconductor for Sequence Data
-Version: 1.27.0
+Version: 1.28.0
 Date: 2017-10-18
 Authors@R: c(person(role="aut", "Sonali", "Arora", email = "sarora@fredhutch.org"), person(role="aut", "Martin", "Morgan", email = "martin.morgan@roswellpark.org"), person(role="cre", "Bioconductor Package Maintainer", email = "maintainer@bioconductor.org"))
 Description: Bioconductor enables the analysis and comprehension of high-
